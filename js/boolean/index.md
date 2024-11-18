@@ -128,10 +128,12 @@ if (isWrong) {
 
 ```js
 const falsy1 = Boolean(),
-  falsy2 = Boolean(0),
-  falsy3 = Boolean(null),
-  falsy4 = Boolean(''),
-  falsy5 = Boolean(false)
+  falsy2 = Boolean(undefined),
+  falsy3 = Boolean(0),
+  falsy4 = Boolean(null),
+  falsy5 = Boolean(''),
+  falsy6 = Boolean(false),
+  falsy7 = Boolean(NaN),
 ```
 
 А все эти — в `true`:
