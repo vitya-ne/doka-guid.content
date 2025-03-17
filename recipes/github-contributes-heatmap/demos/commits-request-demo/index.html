@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <title>DEMO — ARTICLE — Дока</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto&display=swap">
+  <style>
+    /* STYLES */
+  </style>
+</head>
+<body>
+  <script>
+    const githubRepoApi = 'https://api.github.com/repos'
+    const repo = 'doka-guide/content'
+
+    function requestCommitsPageData(queryStr = ''){
+      try {
+        return fetch(`${githubRepoApi}/${repo}/commits?${queryStr}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/vnd.github+json',
+            'X-GitHub-Api-Version': '2022-11-28'
+          }
+        })
+      } catch (error) {
+        console.error(error);
+        return []
+      }
+    }
+
+    function getQueryParamString(year, pageSize = 100, page = 0) {
+      const yearParam = year || new Date().getFullYear().toString()
+      const since = `${yearParam}-01-01T00:00:00Z`
+      const until = `${yearParam}-12-31T23:59:59Z`
+      const queryParams = new URLSearchParams({
+        since,
+        until,
+        per_page: pageSize,
+        page
+      })
+      return queryParams.toString()
+    }
+
+    async function requestCommitsData(){
+      try {
+        const queryStr = getQueryParamString()
+        const response = await requestCommitsPageData(queryStr)
+        if (response.ok) {
+          const pageData = await response.json()
+          console.log('requestCommitsData:', pageData.map(item => item.commit.author.date))
+        }
+      } catch (error) {
+        console.error(error)
+      }
+    }
+
+    requestCommitsData()
+  </script>
+</body>
+</html>
