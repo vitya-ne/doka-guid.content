@@ -13,12 +13,14 @@
 </head>
 <body>
   <script>
-    const githubRepoApi = 'https://api.github.com/repos'
-    const repo = 'doka-guide/content'
+    const GITHUB_REPO_API = 'https://api.github.com/repos'
+    const REPO = 'doka-guide/content'
+    const NEXT_PAGE_PATTERN = /(?<=<)([\S]*)(?=>; rel="Next")/i
+    const CO_AUTHORS_PATTERN = /Co-authored-by:\s+([^\n\r]+)/g
 
-    function requestCommitsPageData(queryStr = ''){
+    function requestData(url){
       try {
-        return fetch(`${githubRepoApi}/${repo}/commits?${queryStr}`, {
+        return fetch(url, {
           method: 'GET',
           headers: {
             'Accept': 'application/vnd.github+json',
@@ -31,33 +33,157 @@
       }
     }
 
-    function getQueryParamString(year, pageSize = 100, page = 0) {
-      const yearParam = year || new Date().getFullYear().toString()
-      const since = `${yearParam}-01-01T00:00:00Z`
-      const until = `${yearParam}-12-31T23:59:59Z`
+    function createQueryStr(year, pageSize = 100) {
+      const yearParam = year || new Date().getFullYear()
+      const since = `${yearParam}-01-22T00:00:00+03:00`
+      const until = `${yearParam}-01-22T23:59:59+03:00`
       const queryParams = new URLSearchParams({
         since,
         until,
-        per_page: pageSize,
-        page
+        sha: 'main',
+        per_page: pageSize
       })
       return queryParams.toString()
     }
 
-    async function requestCommitsData(){
-      try {
-        const queryStr = getQueryParamString()
-        const response = await requestCommitsPageData(queryStr)
-        if (response.ok) {
-          const pageData = await response.json()
-          console.log('requestCommitsData:', pageData.map(item => item.commit.author.date))
+    function createCommitsDataURL(year) {
+      const queryStr = createQueryStr(year)
+      return `${GITHUB_REPO_API}/${REPO}/commits?${queryStr}`
+    }
+
+    function getCoAuthors(message) {
+      const groups = [ ...message.matchAll(CO_AUTHORS_PATTERN)]
+      if (groups.length === 0) return null
+
+      return groups.map(match => match[1])
+    }
+
+    function getPageCommits(pageData) {
+      return pageData.map(item => {
+        const { author, committer, commit } = item
+        const { message, author: commitAuthor } = commit
+
+        const common = {
+          authorName: commitAuthor.name,
+          authorEmail: commitAuthor.email,
+          coAuthors: getCoAuthors(message),
+          message
         }
+
+        if (author) {
+          const { login, id } = author
+          const commitDate = commit.author.date
+          return {
+            ...common,
+            dateTime: commitDate,
+            authorLogin: login,
+            authorId: id,
+          }
+        } else if (committer){
+          console.log('unknown author:', item)
+          const commitDate = commit.committer.date
+
+          return {
+            ...common,
+            dateTime: commitDate,
+            committerLogin: committer.login,
+            committerId: committer.id,
+          }
+        } else {
+          console.log('unknown author and committer:', item)
+        }
+      }).filter(Boolean);
+    }
+
+    async function fetchCommitsData(year){
+      const commits = []
+
+      try {
+        let url = createCommitsDataURL(year)
+        let pagesRemaining = true
+
+        while(pagesRemaining) {
+          const response = await requestData(url)
+
+          if (response.ok) {
+            const pageData = await response.json()
+
+            const pageCommits = getPageCommits(pageData)
+
+            commits.push(...pageCommits)
+
+            const linkHeader = response.headers.get('link')
+            pagesRemaining = linkHeader && linkHeader.includes(`rel=\"next\"`)
+
+            if (pagesRemaining) {
+              url = linkHeader.match(NEXT_PAGE_PATTERN)[0]
+            }
+          } else {
+            pagesRemaining = false
+          }
+        }
+        return commits
       } catch (error) {
         console.error(error)
       }
     }
 
-    requestCommitsData()
+    function analyzeCommits(commits = []){
+      const authorsMap = new Map()
+      const coAuthorsMap = new Map()
+
+      const datesMap = commits.reduce((acc, commit, index) => {
+        const { dateTime, authorLogin, committerLogin, coAuthors } = commit
+
+        const [ date ] = dateTime.split('T')
+        const current = acc.get(date) ?? 0
+
+        const key = commit.authorId ?? commit.committerId
+
+        const authorData = authorsMap.get(key) ?? {
+          login: authorLogin ?? committerLogin,
+          // email: authorEmail
+          count: 0,
+          dates: []
+        }
+
+        authorData.count++
+        authorData.dates.push(date)
+        authorsMap.set(key, authorData)
+
+        if (coAuthors) {
+          coAuthors.forEach(coAuthorKey => {
+            const coAauthorData = coAuthorsMap.get(coAuthorKey) ?? {
+              email: coAuthorKey,
+              count: 0,
+              dates: []
+            }
+            coAauthorData.count++
+            coAauthorData.dates.push(date)
+            coAuthorsMap.set(coAuthorKey, coAauthorData)
+          })
+        }
+
+        acc.set(date, current + 1)
+
+        return acc
+      }, new Map())
+
+      const authors = Array.from(authorsMap.values()).sort(
+        (a, b) => b.count - a.count
+      )
+
+      const coAuthors = Array.from(coAuthorsMap.values())
+
+      console.log('commits:', commits);
+      console.log('dates map:', datesMap)
+      console.log('authors:', authors)
+      console.log('coAuthors:', coAuthors)
+    }
+
+    fetchCommitsData(2024).then(commits => {
+      analyzeCommits(commits)
+    })
   </script>
 </body>
 </html>

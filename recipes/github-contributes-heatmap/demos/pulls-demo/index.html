@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <title>DEMO — ARTICLE — Дока</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto&display=swap">
+  <style>
+    /* STYLES */
+  </style>
+</head>
+<body>
+  <script>
+    const githubRepoApi = 'https://api.github.com/repos'
+    const repo = 'doka-guide/content'
+
+
+    function requestData(url){
+      try {
+        return fetch(url, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/vnd.github+json',
+            'X-GitHub-Api-Version': '2022-11-28'
+          }
+        })
+      } catch (error) {
+        console.error(error);
+        return []
+      }
+    }
+
+    function createQueryStr(year, pageSize = 100) {
+      const queryParams = new URLSearchParams({
+        state: 'closed',
+        base: 'main',
+        per_page: pageSize
+      })
+      return queryParams.toString()
+    }
+
+    function makePullsDataURL(year) {
+      const queryStr = createQueryStr(year)
+      return `${githubRepoApi}/${repo}/pulls?${queryStr}`
+    }
+
+    async function fetchPullsData(year){
+      const pulls = []
+      const nextPattern = /(?<=<)([\S]*)(?=>; rel="Next")/i
+
+      try {
+        let url = makePullsDataURL(year)
+        let pagesRemaining = true
+
+        while(pagesRemaining) {
+          const response = await requestData(url)
+
+          if (response.ok) {
+            const pageData = await response.json()
+
+            // const pageCommits = pageData.map(item => {
+
+            //   const { author, committer, commit } = item
+
+            //   if (author) {
+            //     const { login, id } = author
+            //     const commitDate = commit.author.date
+            //     return {
+            //       dateTime: commitDate,
+            //       authorLogin: login,
+            //       authorId: id,
+            //       committerLogin: committer.login,
+            //       committerId: committer.id
+            //     }
+            //   } else if (committer){
+            //     console.log(':', item);
+            //     const commitDate = commit.committer.date
+            //     return {
+            //       dateTime: commitDate,
+            //       committerLogin: committer.login,
+            //       committerId: committer.id
+            //     }
+            //   }
+            // }).filter(Boolean)
+
+            pulls.push(...pageData)
+
+            const linkHeader = response.headers.get('link')
+            pagesRemaining = linkHeader && linkHeader.includes(`rel=\"next\"`)
+
+            if (pagesRemaining) {
+              url = linkHeader.match(nextPattern)[0]
+            }
+          } else {
+            pagesRemaining = false
+          }
+        }
+        return commits
+      } catch (error) {
+        console.error(error)
+      }
+    }
+
+    function analyze(pulls = []){
+      // const authorsMap = new Map()
+
+      // const datesMap = commits.reduce((acc, commit) => {
+      //   const { dateTime, authorLogin, committerLogin } = commit
+
+      //   const [ date ] = dateTime.split('T')
+      //   const current = acc.get(date) ?? 0
+
+      //   const key = commit.authorId ?? commit.committerId
+
+      //   const authorData = authorsMap.get(key) ?? {
+      //     login: authorLogin ?? committerLogin,
+      //     count: 0,
+      //     dates: []
+      //   }
+
+      //   authorData.count++
+      //   authorData.dates.push(date)
+      //   authorsMap.set(key, authorData)
+
+      //   acc.set(date, current + 1)
+
+      //   return acc
+      // }, new Map())
+
+      // const authors = Array.from(authorsMap.values()).sort(
+      //   (a, b) => b.count - a.count
+      // )
+
+      console.log('pulls:', pulls);
+      // console.log('dates map:', datesMap)
+      // console.log('authors:', authors)
+    }
+
+    fetchPullsData().then(data => {
+      analyze(data)
+    })
+  </script>
+</body>
+</html>
