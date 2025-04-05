@@ -17,6 +17,7 @@
     const REPO = 'doka-guide/content'
     const NEXT_PAGE_PATTERN = /(?<=<)([\S]*)(?=>; rel="Next")/i
     const CO_AUTHORS_PATTERN = /Co-authored-by:\s+([^\n\r]+)/g
+    const EMAIL_PATTERN = /^(.+?)\s*<([^>]+)>$/
 
     function requestData(url){
       try {
@@ -35,8 +36,8 @@
 
     function createQueryStr(year, pageSize = 100) {
       const yearParam = year || new Date().getFullYear()
-      const since = `${yearParam}-01-22T00:00:00+03:00`
-      const until = `${yearParam}-01-22T23:59:59+03:00`
+      const since = `${yearParam}-01-01T00:00:00+03:00`
+      const until = `${yearParam}-12-31T23:59:59+03:00`
       const queryParams = new URLSearchParams({
         since,
         until,
@@ -133,41 +134,71 @@
       const coAuthorsMap = new Map()
 
       const datesMap = commits.reduce((acc, commit, index) => {
-        const { dateTime, authorLogin, committerLogin, coAuthors } = commit
+        const { dateTime, authorLogin, authorEmail, committerLogin, coAuthors } = commit
 
         const [ date ] = dateTime.split('T')
-        const current = acc.get(date) ?? 0
+        let currentDate = acc.get(date) ?? {
+          count: 0,
+          authors: new Map(),
+          coAuthors: new Map()
+        }
 
         const key = commit.authorId ?? commit.committerId
 
         const authorData = authorsMap.get(key) ?? {
           login: authorLogin ?? committerLogin,
-          // email: authorEmail
-          count: 0,
-          dates: []
+          email: authorEmail,
+          count: 0
         }
 
         authorData.count++
-        authorData.dates.push(date)
         authorsMap.set(key, authorData)
+
+        const currentDateAuthor = currentDate.authors.get(authorData.login) ?? {
+          count: 0,
+          email: authorData.email
+        }
+
+        currentDate.count++
+        currentDateAuthor.count++
+        currentDate.authors.set(authorData.login, currentDateAuthor)
 
         if (coAuthors) {
           coAuthors.forEach(coAuthorKey => {
-            const coAauthorData = coAuthorsMap.get(coAuthorKey) ?? {
-              email: coAuthorKey,
-              count: 0,
-              dates: []
+            const nameEmailMatch = coAuthorKey.match(EMAIL_PATTERN)
+            if (nameEmailMatch) {
+              const coAauthorName = nameEmailMatch[1]
+              const coAauthorEmail = nameEmailMatch[2]
+
+              const coAauthorData = coAuthorsMap.get(coAauthorEmail) ?? {
+                name: coAauthorName,
+                count: 0
+              }
+
+              coAauthorData.count++
+              coAuthorsMap.set(coAauthorEmail, coAauthorData)
+
+              const currentDateCoAauthor = currentDate.coAuthors.get(coAauthorEmail) ?? {
+                count: 0,
+                name: coAauthorData.name
+              }
+
+              currentDateCoAauthor.count++
+              currentDate.coAuthors.set(coAauthorEmail, currentDateCoAauthor)
             }
-            coAauthorData.count++
-            coAauthorData.dates.push(date)
-            coAuthorsMap.set(coAuthorKey, coAauthorData)
           })
         }
 
-        acc.set(date, current + 1)
+        acc.set(date, currentDate)
 
         return acc
       }, new Map())
+
+      const dates = Array.from(datesMap.entries()).reduce((acc, item) => {
+        const [date, data] = item
+        acc.push({ date, ...data })
+        return acc
+      }, [])
 
       const authors = Array.from(authorsMap.values()).sort(
         (a, b) => b.count - a.count
@@ -176,12 +207,12 @@
       const coAuthors = Array.from(coAuthorsMap.values())
 
       console.log('commits:', commits);
-      console.log('dates map:', datesMap)
+      console.log('dates:', dates)
       console.log('authors:', authors)
       console.log('coAuthors:', coAuthors)
     }
 
-    fetchCommitsData(2024).then(commits => {
+    fetchCommitsData(2025).then(commits => {
       analyzeCommits(commits)
     })
   </script>
