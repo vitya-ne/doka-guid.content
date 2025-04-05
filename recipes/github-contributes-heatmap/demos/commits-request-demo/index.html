@@ -195,8 +195,14 @@
       }, new Map())
 
       const dates = Array.from(datesMap.entries()).reduce((acc, item) => {
-        const [date, data] = item
-        acc.push({ date, ...data })
+        const [date, {count, authors, coAuthors}] = item
+
+        acc.push({
+          date,
+          count,
+          authors: Array.from(authors.values()),
+          coAuthors: Array.from(coAuthors.values())
+        })
         return acc
       }, [])
 
@@ -207,9 +213,9 @@
       const coAuthors = Array.from(coAuthorsMap.values())
 
       console.log('commits:', commits);
-      console.log('dates:', dates)
       console.log('authors:', authors)
       console.log('coAuthors:', coAuthors)
+      console.log('dates:', dates)
     }
 
     fetchCommitsData(2025).then(commits => {
