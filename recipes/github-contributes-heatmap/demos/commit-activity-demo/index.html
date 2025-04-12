@@ -6,34 +6,60 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap">
   <style>
     /* STYLES */
-    body {
-      background-color: #000;
+    html {
+      color-scheme: dark;
     }
-    .container,
-    .grid {
+
+    body {
+      min-height: 100vh;
+      padding: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #18191C;
+      color: #FFFFFF;
+      font-family: "Roboto", sans-serif;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .description {
+      margin: 0 1rem;
+      font-size: 1.5rem;
+      color: #2e8b57;
+    }
+
+    .description--value {
+      margin: 0 1rem;
+      font-size: 1.5rem;
+      color: #98fb98;
+    }
+
+    .year {
       display: flex;
       margin: 1rem;
     }
     .week {
       display: flex;
+      flex-direction: column;
       flex: 0 0 auto;
-      font-size: 10px;
-      margin: 1px;
     }
-    .cell {
-
+    .day {
       width: 14px;
       height: 14px;
+      margin: 1px;
       border: 1px solid #555;
       /*outline: 1px solid #444;
       outline-offset: 2px;*/
       border-radius: 3px;
     }
-    .cell-body {
-      width: 100%;
+    .cell {
       background-color: #28e628;
     }
 
@@ -41,699 +67,704 @@
 </head>
 <body>
   <div id="repoCommitsGrid" class="container">
+    <div class="description"></div>
   </div>
 
   <script>
     const GITHUB_REPO_API = 'https://api.github.com/repos'
-    const REPO = 'doka-guide/content'
+    // const REPO = 'doka-guide/content'
+    const REPO = 'vuejs/core'
     const DATE_FORMATTER = new Intl.DateTimeFormat('ru', {
       //weekday: 'long',
       year: 'numeric',
       month: 'numeric',
       day: 'numeric',
     })
-    const MOCKUP = [
-      {
-          "days": [
-              2,
-              3,
-              8,
-              5,
-              3,
-              8,
-              2
-          ],
-          "total": 31,
-          "week": 1713052800
-      },
-      {
-          "days": [
-              0,
-              6,
-              3,
-              5,
-              1,
-              6,
-              1
-          ],
-          "total": 22,
-          "week": 1713657600
-      },
-      {
-          "days": [
-              2,
-              2,
-              2,
-              1,
-              0,
-              1,
-              4
-          ],
-          "total": 12,
-          "week": 1714262400
-      },
-      {
-          "days": [
-              0,
-              2,
-              10,
-              7,
-              7,
-              7,
-              2
-          ],
-          "total": 35,
-          "week": 1714867200
-      },
-      {
-          "days": [
-              0,
-              0,
-              0,
-              0,
-              0,
-              7,
-              0
-          ],
-          "total": 7,
-          "week": 1715472000
-      },
-      {
-          "days": [
-              0,
-              0,
-              0,
-              0,
-              0,
-              3,
-              0
-          ],
-          "total": 3,
-          "week": 1716076800
-      },
-      {
-          "days": [
-              0,
-              0,
-              5,
-              0,
-              1,
-              3,
-              0
-          ],
-          "total": 9,
-          "week": 1716681600
-      },
-      {
-          "days": [
-              2,
-              6,
-              1,
-              0,
-              0,
-              3,
-              2
-          ],
-          "total": 14,
-          "week": 1717286400
-      },
-      {
-          "days": [
-              0,
-              4,
-              7,
-              2,
-              2,
-              2,
-              2
-          ],
-          "total": 19,
-          "week": 1717891200
-      },
-      {
-          "days": [
-              0,
-              7,
-              2,
-              5,
-              0,
-              3,
-              0
-          ],
-          "total": 17,
-          "week": 1718496000
-      },
-      {
-          "days": [
-              0,
-              0,
-              9,
-              2,
-              6,
-              1,
-              0
-          ],
-          "total": 18,
-          "week": 1719100800
-      },
-      {
-          "days": [
-              0,
-              5,
-              1,
-              3,
-              1,
-              4,
-              0
-          ],
-          "total": 14,
-          "week": 1719705600
-      },
-      {
-          "days": [
-              0,
-              6,
-              1,
-              3,
-              1,
-              4,
-              0
-          ],
-          "total": 15,
-          "week": 1720310400
-      },
-      {
-          "days": [
-              2,
-              3,
-              11,
-              0,
-              3,
-              45,
-              10
-          ],
-          "total": 74,
-          "week": 1720915200
-      },
-      {
-          "days": [
-              0,
-              4,
-              3,
-              5,
-              0,
-              1,
-              0
-          ],
-          "total": 13,
-          "week": 1721520000
-      },
-      {
-          "days": [
-              1,
-              6,
-              2,
-              2,
-              7,
-              1,
-              0
-          ],
-          "total": 19,
-          "week": 1722124800
-      },
-      {
-          "days": [
-              0,
-              6,
-              0,
-              0,
-              0,
-              1,
-              0
-          ],
-          "total": 7,
-          "week": 1722729600
-      },
-      {
-          "days": [
-              0,
-              3,
-              0,
-              3,
-              3,
-              1,
-              0
-          ],
-          "total": 10,
-          "week": 1723334400
-      },
-      {
-          "days": [
-              0,
-              0,
-              0,
-              2,
-              0,
-              1,
-              0
-          ],
-          "total": 3,
-          "week": 1723939200
-      },
-      {
-          "days": [
-              0,
-              2,
-              2,
-              0,
-              0,
-              2,
-              0
-          ],
-          "total": 6,
-          "week": 1724544000
-      },
-      {
-          "days": [
-              3,
-              0,
-              0,
-              1,
-              0,
-              1,
-              0
-          ],
-          "total": 5,
-          "week": 1725148800
-      },
-      {
-          "days": [
-              0,
-              0,
-              0,
-              0,
-              0,
-              1,
-              0
-          ],
-          "total": 1,
-          "week": 1725753600
-      },
-      {
-          "days": [
-              0,
-              0,
-              2,
-              0,
-              0,
-              16,
-              2
-          ],
-          "total": 20,
-          "week": 1726358400
-      },
-      {
-          "days": [
-              1,
-              7,
-              5,
-              3,
-              2,
-              5,
-              0
-          ],
-          "total": 23,
-          "week": 1726963200
-      },
-      {
-          "days": [
-              4,
-              6,
-              1,
-              0,
-              0,
-              1,
-              1
-          ],
-          "total": 13,
-          "week": 1727568000
-      },
-      {
-          "days": [
-              1,
-              0,
-              0,
-              0,
-              0,
-              1,
-              0
-          ],
-          "total": 2,
-          "week": 1728172800
-      },
-      {
-          "days": [
-              0,
-              1,
-              1,
-              0,
-              0,
-              8,
-              1
-          ],
-          "total": 11,
-          "week": 1728777600
-      },
-      {
-          "days": [
-              0,
-              0,
-              1,
-              8,
-              5,
-              1,
-              0
-          ],
-          "total": 15,
-          "week": 1729382400
-      },
-      {
-          "days": [
-              0,
-              2,
-              0,
-              0,
-              7,
-              2,
-              0
-          ],
-          "total": 11,
-          "week": 1729987200
-      },
-      {
-          "days": [
-              0,
-              0,
-              2,
-              0,
-              0,
-              1,
-              0
-          ],
-          "total": 3,
-          "week": 1730592000
-      },
-      {
-          "days": [
-              0,
-              0,
-              0,
-              0,
-              0,
-              10,
-              0
-          ],
-          "total": 10,
-          "week": 1731196800
-      },
-      {
-          "days": [
-              0,
-              4,
-              3,
-              0,
-              0,
-              2,
-              2
-          ],
-          "total": 11,
-          "week": 1731801600
-      },
-      {
-          "days": [
-              0,
-              0,
-              0,
-              0,
-              2,
-              1,
-              0
-          ],
-          "total": 3,
-          "week": 1732406400
-      },
-      {
-          "days": [
-              5,
-              8,
-              0,
-              1,
-              4,
-              1,
-              0
-          ],
-          "total": 19,
-          "week": 1733011200
-      },
-      {
-          "days": [
-              0,
-              0,
-              6,
-              0,
-              2,
-              8,
-              2
-          ],
-          "total": 18,
-          "week": 1733616000
-      },
-      {
-          "days": [
-              0,
-              9,
-              5,
-              0,
-              0,
-              1,
-              0
-          ],
-          "total": 15,
-          "week": 1734220800
-      },
-      {
-          "days": [
-              0,
-              0,
-              0,
-              4,
-              1,
-              1,
-              0
-          ],
-          "total": 6,
-          "week": 1734825600
-      },
-      {
-          "days": [
-              0,
-              0,
-              2,
-              0,
-              0,
-              4,
-              4
-          ],
-          "total": 10,
-          "week": 1735430400
-      },
-      {
-          "days": [
-              0,
-              0,
-              0,
-              0,
-              3,
-              5,
-              0
-          ],
-          "total": 8,
-          "week": 1736035200
-      },
-      {
-          "days": [
-              3,
-              4,
-              0,
-              1,
-              2,
-              5,
-              0
-          ],
-          "total": 15,
-          "week": 1736640000
-      },
-      {
-          "days": [
-              0,
-              0,
-              2,
-              1,
-              3,
-              4,
-              0
-          ],
-          "total": 10,
-          "week": 1737244800
-      },
-      {
-          "days": [
-              0,
-              10,
-              2,
-              0,
-              1,
-              9,
-              2
-          ],
-          "total": 24,
-          "week": 1737849600
-      },
-      {
-          "days": [
-              2,
-              1,
-              1,
-              1,
-              3,
-              1,
-              0
-          ],
-          "total": 9,
-          "week": 1738454400
-      },
-      {
-          "days": [
-              0,
-              0,
-              0,
-              2,
-              0,
-              1,
-              0
-          ],
-          "total": 3,
-          "week": 1739059200
-      },
-      {
-          "days": [
-              0,
-              3,
-              1,
-              1,
-              1,
-              3,
-              0
-          ],
-          "total": 9,
-          "week": 1739664000
-      },
-      {
-          "days": [
-              2,
-              1,
-              0,
-              5,
-              0,
-              4,
-              6
-          ],
-          "total": 18,
-          "week": 1740268800
-      },
-      {
-          "days": [
-              3,
-              2,
-              4,
-              0,
-              0,
-              2,
-              1
-          ],
-          "total": 12,
-          "week": 1740873600
-      },
-      {
-          "days": [
-              0,
-              0,
-              7,
-              0,
-              3,
-              2,
-              0
-          ],
-          "total": 12,
-          "week": 1741478400
-      },
-      {
-          "days": [
-              0,
-              0,
-              0,
-              0,
-              0,
-              1,
-              0
-          ],
-          "total": 1,
-          "week": 1742083200
-      },
-      {
-          "days": [
-              2,
-              2,
-              0,
-              0,
-              0,
-              3,
-              3
-          ],
-          "total": 10,
-          "week": 1742688000
-      },
-      {
-          "days": [
-              2,
-              4,
-              0,
-              1,
-              0,
-              1,
-              1
-          ],
-          "total": 9,
-          "week": 1743292800
-      },
-      {
-          "days": [
-              0,
-              2,
-              0,
-              0,
-              0,
-              0,
-              0
-          ],
-          "total": 2,
-          "week": 1743897600
-      }
-    ]
+    const COLOR_MAX_STEPS = 10
+    const COLOR_MIN_STEPS = 5
+    const BASE_HSL = [90.5, 100, 49.4]
+    // const MOCKUP = [
+    //   {
+    //       "days": [
+    //           2,
+    //           3,
+    //           8,
+    //           5,
+    //           3,
+    //           8,
+    //           2
+    //       ],
+    //       "total": 31,
+    //       "week": 1713052800
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           6,
+    //           3,
+    //           5,
+    //           1,
+    //           6,
+    //           1
+    //       ],
+    //       "total": 22,
+    //       "week": 1713657600
+    //   },
+    //   {
+    //       "days": [
+    //           2,
+    //           2,
+    //           2,
+    //           1,
+    //           0,
+    //           1,
+    //           4
+    //       ],
+    //       "total": 12,
+    //       "week": 1714262400
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           2,
+    //           10,
+    //           7,
+    //           7,
+    //           7,
+    //           2
+    //       ],
+    //       "total": 35,
+    //       "week": 1714867200
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           0,
+    //           0,
+    //           0,
+    //           0,
+    //           7,
+    //           0
+    //       ],
+    //       "total": 7,
+    //       "week": 1715472000
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           0,
+    //           0,
+    //           0,
+    //           0,
+    //           3,
+    //           0
+    //       ],
+    //       "total": 3,
+    //       "week": 1716076800
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           0,
+    //           5,
+    //           0,
+    //           1,
+    //           3,
+    //           0
+    //       ],
+    //       "total": 9,
+    //       "week": 1716681600
+    //   },
+    //   {
+    //       "days": [
+    //           2,
+    //           6,
+    //           1,
+    //           0,
+    //           0,
+    //           3,
+    //           2
+    //       ],
+    //       "total": 14,
+    //       "week": 1717286400
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           4,
+    //           7,
+    //           2,
+    //           2,
+    //           2,
+    //           2
+    //       ],
+    //       "total": 19,
+    //       "week": 1717891200
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           7,
+    //           2,
+    //           5,
+    //           0,
+    //           3,
+    //           0
+    //       ],
+    //       "total": 17,
+    //       "week": 1718496000
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           0,
+    //           9,
+    //           2,
+    //           6,
+    //           1,
+    //           0
+    //       ],
+    //       "total": 18,
+    //       "week": 1719100800
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           5,
+    //           1,
+    //           3,
+    //           1,
+    //           4,
+    //           0
+    //       ],
+    //       "total": 14,
+    //       "week": 1719705600
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           6,
+    //           1,
+    //           3,
+    //           1,
+    //           4,
+    //           0
+    //       ],
+    //       "total": 15,
+    //       "week": 1720310400
+    //   },
+    //   {
+    //       "days": [
+    //           2,
+    //           3,
+    //           11,
+    //           0,
+    //           3,
+    //           45,
+    //           10
+    //       ],
+    //       "total": 74,
+    //       "week": 1720915200
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           4,
+    //           3,
+    //           5,
+    //           0,
+    //           1,
+    //           0
+    //       ],
+    //       "total": 13,
+    //       "week": 1721520000
+    //   },
+    //   {
+    //       "days": [
+    //           1,
+    //           6,
+    //           2,
+    //           2,
+    //           7,
+    //           1,
+    //           0
+    //       ],
+    //       "total": 19,
+    //       "week": 1722124800
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           6,
+    //           0,
+    //           0,
+    //           0,
+    //           1,
+    //           0
+    //       ],
+    //       "total": 7,
+    //       "week": 1722729600
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           3,
+    //           0,
+    //           3,
+    //           3,
+    //           1,
+    //           0
+    //       ],
+    //       "total": 10,
+    //       "week": 1723334400
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           0,
+    //           0,
+    //           2,
+    //           0,
+    //           1,
+    //           0
+    //       ],
+    //       "total": 3,
+    //       "week": 1723939200
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           2,
+    //           2,
+    //           0,
+    //           0,
+    //           2,
+    //           0
+    //       ],
+    //       "total": 6,
+    //       "week": 1724544000
+    //   },
+    //   {
+    //       "days": [
+    //           3,
+    //           0,
+    //           0,
+    //           1,
+    //           0,
+    //           1,
+    //           0
+    //       ],
+    //       "total": 5,
+    //       "week": 1725148800
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           0,
+    //           0,
+    //           0,
+    //           0,
+    //           1,
+    //           0
+    //       ],
+    //       "total": 1,
+    //       "week": 1725753600
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           0,
+    //           2,
+    //           0,
+    //           0,
+    //           16,
+    //           2
+    //       ],
+    //       "total": 20,
+    //       "week": 1726358400
+    //   },
+    //   {
+    //       "days": [
+    //           1,
+    //           7,
+    //           5,
+    //           3,
+    //           2,
+    //           5,
+    //           0
+    //       ],
+    //       "total": 23,
+    //       "week": 1726963200
+    //   },
+    //   {
+    //       "days": [
+    //           4,
+    //           6,
+    //           1,
+    //           0,
+    //           0,
+    //           1,
+    //           1
+    //       ],
+    //       "total": 13,
+    //       "week": 1727568000
+    //   },
+    //   {
+    //       "days": [
+    //           1,
+    //           0,
+    //           0,
+    //           0,
+    //           0,
+    //           1,
+    //           0
+    //       ],
+    //       "total": 2,
+    //       "week": 1728172800
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           1,
+    //           1,
+    //           0,
+    //           0,
+    //           8,
+    //           1
+    //       ],
+    //       "total": 11,
+    //       "week": 1728777600
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           0,
+    //           1,
+    //           8,
+    //           5,
+    //           1,
+    //           0
+    //       ],
+    //       "total": 15,
+    //       "week": 1729382400
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           2,
+    //           0,
+    //           0,
+    //           7,
+    //           2,
+    //           0
+    //       ],
+    //       "total": 11,
+    //       "week": 1729987200
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           0,
+    //           2,
+    //           0,
+    //           0,
+    //           1,
+    //           0
+    //       ],
+    //       "total": 3,
+    //       "week": 1730592000
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           0,
+    //           0,
+    //           0,
+    //           0,
+    //           10,
+    //           0
+    //       ],
+    //       "total": 10,
+    //       "week": 1731196800
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           4,
+    //           3,
+    //           0,
+    //           0,
+    //           2,
+    //           2
+    //       ],
+    //       "total": 11,
+    //       "week": 1731801600
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           0,
+    //           0,
+    //           0,
+    //           2,
+    //           1,
+    //           0
+    //       ],
+    //       "total": 3,
+    //       "week": 1732406400
+    //   },
+    //   {
+    //       "days": [
+    //           5,
+    //           8,
+    //           0,
+    //           1,
+    //           4,
+    //           1,
+    //           0
+    //       ],
+    //       "total": 19,
+    //       "week": 1733011200
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           0,
+    //           6,
+    //           0,
+    //           2,
+    //           8,
+    //           2
+    //       ],
+    //       "total": 18,
+    //       "week": 1733616000
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           9,
+    //           5,
+    //           0,
+    //           0,
+    //           1,
+    //           0
+    //       ],
+    //       "total": 15,
+    //       "week": 1734220800
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           0,
+    //           0,
+    //           4,
+    //           1,
+    //           1,
+    //           0
+    //       ],
+    //       "total": 6,
+    //       "week": 1734825600
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           0,
+    //           2,
+    //           0,
+    //           0,
+    //           4,
+    //           4
+    //       ],
+    //       "total": 10,
+    //       "week": 1735430400
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           0,
+    //           0,
+    //           0,
+    //           3,
+    //           5,
+    //           0
+    //       ],
+    //       "total": 8,
+    //       "week": 1736035200
+    //   },
+    //   {
+    //       "days": [
+    //           3,
+    //           4,
+    //           0,
+    //           1,
+    //           2,
+    //           5,
+    //           0
+    //       ],
+    //       "total": 15,
+    //       "week": 1736640000
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           0,
+    //           2,
+    //           1,
+    //           3,
+    //           4,
+    //           0
+    //       ],
+    //       "total": 10,
+    //       "week": 1737244800
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           10,
+    //           2,
+    //           0,
+    //           1,
+    //           9,
+    //           2
+    //       ],
+    //       "total": 24,
+    //       "week": 1737849600
+    //   },
+    //   {
+    //       "days": [
+    //           2,
+    //           1,
+    //           1,
+    //           1,
+    //           3,
+    //           1,
+    //           0
+    //       ],
+    //       "total": 9,
+    //       "week": 1738454400
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           0,
+    //           0,
+    //           2,
+    //           0,
+    //           1,
+    //           0
+    //       ],
+    //       "total": 3,
+    //       "week": 1739059200
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           3,
+    //           1,
+    //           1,
+    //           1,
+    //           3,
+    //           0
+    //       ],
+    //       "total": 9,
+    //       "week": 1739664000
+    //   },
+    //   {
+    //       "days": [
+    //           2,
+    //           1,
+    //           0,
+    //           5,
+    //           0,
+    //           4,
+    //           6
+    //       ],
+    //       "total": 18,
+    //       "week": 1740268800
+    //   },
+    //   {
+    //       "days": [
+    //           3,
+    //           2,
+    //           4,
+    //           0,
+    //           0,
+    //           2,
+    //           1
+    //       ],
+    //       "total": 12,
+    //       "week": 1740873600
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           0,
+    //           7,
+    //           0,
+    //           3,
+    //           2,
+    //           0
+    //       ],
+    //       "total": 12,
+    //       "week": 1741478400
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           0,
+    //           0,
+    //           0,
+    //           0,
+    //           1,
+    //           0
+    //       ],
+    //       "total": 1,
+    //       "week": 1742083200
+    //   },
+    //   {
+    //       "days": [
+    //           2,
+    //           2,
+    //           0,
+    //           0,
+    //           0,
+    //           3,
+    //           3
+    //       ],
+    //       "total": 10,
+    //       "week": 1742688000
+    //   },
+    //   {
+    //       "days": [
+    //           2,
+    //           4,
+    //           0,
+    //           1,
+    //           0,
+    //           1,
+    //           1
+    //       ],
+    //       "total": 9,
+    //       "week": 1743292800
+    //   },
+    //   {
+    //       "days": [
+    //           0,
+    //           2,
+    //           0,
+    //           0,
+    //           0,
+    //           0,
+    //           0
+    //       ],
+    //       "total": 2,
+    //       "week": 1743897600
+    //   }
+    // ]
 
     function requestGitHubData(url){
       try {
-        fetch(url, {
+        return fetch(url, {
           method: 'GET',
           headers: {
             'Accept': 'application/vnd.github+json',
@@ -746,17 +777,17 @@
       }
     }
 
+    function createURL() {
+      return `${GITHUB_REPO_API}/${REPO}/stats/commit_activity`
+    }
+
     function getWeekDate(weekTimestamp) {
       const date = new Date(weekTimestamp * 1000)
 
       return DATE_FORMATTER.format(date)
     }
 
-    function analyze(data) {
-      console.log(':', data);
-    }
-
-    function parseCommits(responseData) {
+    function parseCommits(responseData = []) {
       return responseData.map(item => {
         const { days, total, week } = item
 
@@ -768,41 +799,82 @@
       })
     }
 
-    function render(data = [], info, parentContainer){
+    function analyzeCounts(data) {
+      const {min, max} = data.reduce((acc, weekData) => {
+        acc.min = Math.min(...weekData.days, acc.min)
+        acc.max = Math.max(...weekData.days, acc.max)
+        return acc
+      }, {min: Number.POSITIVE_INFINITY, max: 0})
+
+      let steps = Math.max(Math.min(max, COLOR_MAX_STEPS), 1)
+      const stepSize = max / steps
+
+      return { min, max, steps: Math.max(steps, COLOR_MIN_STEPS), stepSize }
+    }
+
+    function generatePalette(hsl, steps) {
+      const [h, s, lBase] = hsl
+      const palette = [];
+
+      for (let i = 0; i < steps; i++) {
+        let l = lBase - (lBase * i) / (steps - 1);
+        l = Math.max(0, l);
+        palette.push(`hsl(${h}, ${s}%, ${Math.round(l)}%)`);
+      }
+
+      return palette.reverse()
+    }
+
+    function makeColors(countsInfo) {
+      const {steps} = countsInfo
+
+      return generatePalette(BASE_HSL, steps)
+    }
+
+    function render(params, parentContainer){
+      const {data, countsInfo, colors} = params
+      const divider = Math.max(countsInfo.max, countsInfo.steps)
+      const factor = countsInfo.steps - 1
+      console.log(':', countsInfo, colors);
+
       const columns = data.length
       const yearContainer = document.createElement('div')
-      yearContainer.className = "grid"
+      yearContainer.className = 'year'
 
       data.forEach(weekData => {
-        const cell = document.createElement('div')
-        cell.className = "week cell"
+        const weekContainer = document.createElement('div')
+        weekContainer.className = 'week'
 
-        const cellBody = document.createElement('div')
-        const cellOpacity = weekData.total / info.max
-        cellBody.className = "cell-body"
-        cellBody.style.opacity = cellOpacity > 1 ? 1 : cellOpacity
+        weekData.days.forEach(dayData => {
+          let colorIndex = dayData > 0
+            ? Math.ceil((dayData / divider) * factor)
+            : 0
 
-        cell.appendChild(cellBody)
-        yearContainer.appendChild(cell)
+          const dayContainer = document.createElement('div')
+          dayContainer.className = 'day cell'
+          dayContainer.style.background = colors[colorIndex]
+
+          weekContainer.appendChild(dayContainer)
+        })
+
+        yearContainer.appendChild(weekContainer)
       })
 
       parentContainer.appendChild(yearContainer)
-    }
-
-    function createURL() {
-      return `${GITHUB_REPO_API}/${REPO}/stats/commit_activity`
+      const description = parentContainer.querySelector('.description')
+      description.innerHTML=`repo: <span class="description--value">${REPO}</span> max commits: <span class="description--value">${countsInfo.max}</span>`
     }
 
     async function fetchCommitStat(){
       try {
         let url = createURL()
 
-        // const response = await requestGitHubData(url)
-
-        // if (response.ok) {
-        //   return await response.json()
-        // }
-        return Promise.resolve(MOCKUP)
+        const response = await requestGitHubData(url)
+        console.log('fetchCommitStat:', response);
+        if (response.ok) {
+          return await response.json()
+        }
+        // return Promise.resolve(MOCKUP)
 
       } catch (error) {
         console.error(error)
@@ -812,10 +884,13 @@
     const parentContainer = document.querySelector('#repoCommitsGrid')
 
     fetchCommitStat().then(responseData => {
+      console.log('responseData:', responseData);
       return parseCommits(responseData)
     }).then(data => {
-      const info = analyze(data)
-      render(data, { max: 50}, parentContainer)
+      const countsInfo = analyzeCounts(data)
+      const colors = makeColors(countsInfo)
+
+      render({data, countsInfo, colors}, parentContainer)
     })
   </script>
 </body>
