@@ -83,6 +83,24 @@
       anchor-name: --button-el;
     }
 
+    /* описываем, что значат фолбэки */
+    @position-try --bottom {
+      position-area: bottom center;
+      margin-top: 20px;
+    }
+
+    @position-try --left {
+      position-area: left center;
+      max-width: 200px;
+      margin-right: 20px;
+    }
+
+    @position-try --right {
+      position-area: right center;
+      max-width: 200px;
+      margin-left: 20px;
+    }
+
     .tooltip {
       inset: unset;
       max-width: 300px;
@@ -91,102 +109,22 @@
       background-color: #FFFFFF;
       color: #000000;
       text-align: center;
+      position: fixed;
 
       /* ссылаемся на якорь, к которому привязан тултип */
       position-anchor: --button-el;
       /* выставляем дефолтное положение относительно якоря */
-      position-area: top;
+      position-area: top center;
       /* добавляем фолбэки, если дефолт не отработал */
       position-try-fallbacks: --bottom, --left, --right;
       /* делаем тултип якорем */
-      anchor-name: --tooltip-el;
-    }
-
-    /* описываем, что значат фолбэки */
-    @position-try --bottom {
-      position-area: bottom;
-    }
-
-    @position-try --left {
-      position-area: left;
-      max-width: 200px;
-    }
-
-    @position-try --right {
-      position-area: right;
-      max-width: 200px;
+      /* anchor-name: --tooltip-el; */
     }
 
     .tooltip-content {
       background-color: inherit;
     }
 
-    /* хвостики */
-    .tooltip::before,
-    .tooltip::after,
-    .tooltip .tooltip-content::before,
-    .tooltip .tooltip-content::after {
-      /* якоримся на тот же элемент, что и тултип */
-      position-anchor: --button-el;
-      content: '';
-      position: fixed;
-      background-color: inherit;
-      margin: auto;
-    }
-
-    /* для вертикальной ориентации */
-    .tooltip::before,
-    .tooltip::after {
-      left: anchor(--button-el start);
-      right: anchor(--button-el end);
-      width: 10px;
-      max-height: 10px;
-    }
-
-    /* для кейса, когда тултип под кнопкой */
-    .tooltip::before {
-      /* растягиваем хвостик между двумя якорями */
-      top: anchor(--button-el end);
-      bottom: anchor(--tooltip-el start);
-      translate: 0 7px;
-      rotate: 45deg;
-    }
-
-    /* для кейса, когда тултип над кнопкой */
-    .tooltip::after {
-      /* растягиваем хвостик между двумя якорями */
-      top: anchor(--tooltip-el end);
-      bottom: anchor(--button-el start);
-      translate: 0 -7px;
-      rotate: 45deg;
-    }
-
-    /* для горизонтальной ориентации */
-    .tooltip .tooltip-content::before,
-    .tooltip .tooltip-content::after {
-      top: anchor(--button-el start);
-      bottom: anchor(--button-el end);
-      height: 10px;
-      max-width: 10px;
-    }
-
-    /* для кейса, когда тултип справа от кнопки */
-    .tooltip .tooltip-content::before {
-      /* растягиваем хвостик между двумя якорями */
-      left: anchor(--button-el end);
-      right: anchor(--tooltip-el start);
-      translate: 7px;
-      rotate: 45deg;
-    }
-
-    /* для кейса, когда тултип слева от кнопки */
-    .tooltip .tooltip-content::after {
-      /* растягиваем хвостик между двумя якорями */
-      left: anchor(--tooltip-el end);
-      right: anchor(--button-el start);
-      translate: -7px;
-      rotate: 45deg;
-    }
   </style>
 </head>
 <body>
@@ -195,9 +133,9 @@
       <button class="button tooltip-anchor" id="tooltip-anchor" aria-describedby="tooltip">
         ❤️
       </button>
-      <div class="tooltip" id="tooltip" role="tooltip" popover="manual">
+      <div class="tooltip" id="tooltip" role="tooltip">
         <div class="tooltip-content">
-          Добавить в «Избранное»
+          Добавить в «Избранное»
         </div>
       </div>
     </div>
