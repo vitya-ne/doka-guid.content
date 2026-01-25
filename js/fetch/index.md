@@ -18,7 +18,7 @@ tags:
 
 ## Кратко
 
-С помощью глобальной функции `fetch()` можно отправлять сетевые запросы на сервер — как получать, так и отправлять данные. Метод возвращает [промис](/js/promise/) с объектом ответа, где находится дополнительная информация (статус ответа, заголовки) и ответ на запрос.
+С помощью глобальной функции `fetch()` можно отправлять HTTP-запросы на сервер — как получать, так и отправлять данные. Функция возвращает [промис](/js/promise/) с объектом ответа, где находится дополнительная информация (статус ответа, [заголовки](/tools/http-protocol/#ispolzovanie-zagolovkov)) и ответ на запрос.
 
 ## Пример
 
@@ -27,35 +27,47 @@ tags:
 Проверим доступ к тестовому [API](/tools/api/) с помощью GET-запроса:
 
 ```js
-fetch('https://dummyjson.com/test')
-.then(response => response.json())
-.then(data => console.log(data))
+try {
+  fetch('https://dummyjson.com/test')
+    .then(response => response.json())
+    .then(data => console.log(data))
+} catch (error) {
+  console.error(error.message)
+}
 // { status: 'ok', method: 'GET' }
 ```
 
 А вот такой же запрос с [синтаксисом async/await](/js/async-await/):
 
 ```js
-const response = await fetch('https://dummyjson.com/test')
-const data = await response.json()
-console.log(data)
+try {
+  const response = await fetch('https://dummyjson.com/test')
+  const data = await response.json()
+  console.log(data)
+} catch (error) {
+  console.error(error.message)
+}
 // { status: 'ok', method: 'GET' }
 ```
 
 Отправим данные с помощью POST-запроса:
 
 ```js
-fetch('https://dummyjson.com/todos/add', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    todo: 'Выучить С++ за 21 день',
-    userId: '42',
-    completed: false
+try {
+  const response = await fetch('https://dummyjson.com/todos/add', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      todo: 'Выучить С++ за 21 день',
+      userId: '42',
+      completed: false
+    })
   })
-})
-.then(response => response.json())
-.then(data => console.log(data))
+  const data = await response.json()
+  console.log(data)
+} catch (error) {
+  console.error(error.message)
+}
 // {
 //   id: 255,
 //   todo: 'Выучить С++ за 21 день',
@@ -91,6 +103,33 @@ fetch(resource, options)
 
 Браузер предоставляет глобальный API для работы с запросами и ответами [HTTP](/tools/http-protocol/). Раньше для подобной работы использовался XMLHttpRequest, однако `fetch()` более гибкая и мощная альтернатива. Он понятнее и проще в использовании из-за того, что использует `Promise`.
 
+С помощью аргумента `options` можно указать метод и добавить тело запроса, например, если мы хотим не получать, а отправлять данные. Также в запрос можно добавить заголовки в виде объекта или специального класса `Headers`.
+
+```js
+// Данные для отправки на сервер
+const newPost = {
+  title: 'foo',
+  body: 'bar',
+  userId: 1,
+}
+
+fetch('https://jsonplaceholder.typicode.com/posts', {
+  method: 'POST', // Здесь так же могут быть GET, PUT, DELETE
+  // Тело запроса в JSON-формате
+  body: JSON.stringify(newPost),
+  headers: {
+    // Добавляем необходимые заголовки
+    'Content-type': 'application/json; charset=UTF-8',
+  }
+})
+  .then((response) => response.json())
+  .then((data) => {
+    console.log(data)
+    // {title: "foo", body: "bar", userId: 1, id: 101}
+  }
+)
+```
+
 Результатом вызова `fetch()` будет `Promise`, в котором содержится специальный объект ответа `Response`. У этого объекта есть поля и методы:
 
 - `ok` — принимает состояние `true` или `false` и сообщает об успешности запроса;
@@ -105,32 +144,6 @@ fetch('http://jsonplaceholder.typicode.com/posts')
   .then((response) => response.json()
   // Получим ответ в виде массива из объектов:
   // [{...}, {...}, {...}, ...]
-)
-```
-
-С помощью аргумента `options` можно изменить метод и добавить тело запроса, если мы хотим не получать, а отправлять данные. Также в запрос можно добавить заголовки в виде объекта или специального класса `Headers`.
-
-```js
-const newPost = {
-  title: 'foo',
-  body: 'bar',
-  userId: 1,
-}
-
-fetch('https://jsonplaceholder.typicode.com/posts', {
-  method: 'POST', // Здесь так же могут быть GET, PUT, DELETE
-  // Тело запроса в JSON-формате
-  body: JSON.stringify(newPost),
-  headers: {
-    // Добавляем необходимые заголовки
-    'Content-type': 'application/json; charset=UTF-8',
-  },
-})
-  .then((response) => response.json())
-  .then((data) => {
-    console.log(data)
-    // {title: "foo", body: "bar", userId: 1, id: 101}
-  }
 )
 ```
 
