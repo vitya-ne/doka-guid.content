@@ -18,49 +18,66 @@ tags:
 
 ## Кратко
 
-Синтаксис `using` упрощает управление ресурсами (например, сетевые соединения, потоки, подключения к базам данных), которые требуют явного освобождения после использования.
+Синтаксис `using` упрощает управление ресурсами, которые требуют явного освобождения после использования (например, сетевые соединения, потоки, подключения к базам данных).
 
-Ресурс — это любой объект JavaScript с методом `[Symbol.dispose]()` (для синхронного освобождения) или `[Symbol.asyncDispose]()` (для асинхронного), например, закрытие соединения или отключение от базы данных.
+**Синхронный** ресурс — это объект JavaScript с методом `[Symbol.dispose]()`. **Асинхронный** — с методом `[Symbol.asyncDispose]()`.
 
-Объявление переменной с помощью `using` создаёт ссылку на ресурс. При выходе из блока, в котором объявлена переменная,  автоматически вызывается метод `[Symbol.dispose]()`, гарантируя освобождение ресурса.
+Объявление переменной с помощью `using` связывает её с **синхронным** ресурсом. При выходе из блока, в котором переменная была определена, автоматически вызовется метод [Symbol.dispose](), освобождая ресурс. Для **асинхронных** ресурсов применяется синтаксис `using await` и вызывается метод `await [Symbol.asyncDispose]()`.
 
-Для асинхронных ресурсов используется синтаксис `using await`, который автоматически вызывает `await [Symbol.asyncDispose]()`.
 
 ## Пример
 
+Для имитации ресурса реализуем простой класс `FileResource`. Экземпляр класса имеет методы:
+- `open()` — открыть файл;
+- `read()` — читать данные файла;
+- `close()` — закрыть файл;
+
 ```js
-class Resource {
+class FileResource {
   constructor(name) {
     this.name = name
-    this.isOpen = true
   }
+
+  open() {
+    if (this._isOpen === undefined) {
+      this._isOpen = true
+    }
+  }
+
   read() {
-    if (this.isOpen) {
-      return `Ресурс ${this.name}`
+    if (this._isOpen) {
+      return `данные ресурса ${this.name}`
     }
   }
 
   close() {
-    if (this.isOpen) {
-      this.isOpen = false
-      console.info(`Ресурс ${this.name} освобождён`)
+    if (this._isOpen) {
+      this._isOpen = false
+      console.info(`ресурс ${this.name} освобождён`)
     }
   }
 }
+```
 
-function openFile(name) {
-  return new Resource(name)
-}
+Для работы с ресурсом используем блок [`try/catch/finally`](/js/try-catch/):
+
+```js
 
 function workWithResource() {
   let file
   try {
-    file = openFile("file1.txt")
+    file = new FileResource("file1.txt")
+    // Используем ресурс
+    file.open()
     console.log(file.read())
   } finally {
+    // Освобождаем ресурс
     file?.close()
   }
 }
 
 workWithResource()
+// данные ресурса file1.txt
+// ресурс file1.txt освобождён
+
 ```
