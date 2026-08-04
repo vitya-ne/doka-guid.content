@@ -26,13 +26,75 @@ tags:
 
 ## Пример
 
+Рассмотрим простой пример использования `using`.
+
+Создадим класс-обёртку для работы с экземпляром FileReader с методами `readAsText()` и `close()`.
+
+```js
+  // класс-обёртка для FileReader
+  class ManagedFileReader {
+    constructor(file) {
+      // Создание ресурса
+      this.reader = new FileReader();
+      console.log("FileReader экземпляр создан")
+      this.file = file
+    }
+
+    // Метод использования ресурса
+    readAsText() {
+      return new Promise((resolve, reject) => {
+        this.reader.onload = () => resolve(this.reader.result)
+        this.reader.onerror = reject
+        this.reader.readAsText(this.file)
+      })
+    }
+
+    // Метод освобождения ресурса
+    close() {
+      this.reader.abort()
+      console.log("FileReader экземпляр освобождён")
+    }
+  }
+```
+
+Добавим метод `[Symbol.dispose]()`:
+
+```js
+  // класс-обёртка для FileReader
+  class ManagedFileReader {
+    // Существующая реализация
+    // ...
+
+    // Метод освобождения с помощью using
+    [Symbol.dispose]() {
+      this.close()
+    }
+  }
+```
+
+Создадим функцию использования ресурса. Обратите внимание, что нам не нужно вызывать метод `close()` явно:
+
+```js
+  const processFile = async (file) => {
+    using reader = new ManagedFileReader(file) // Создание
+    const content = await reader.readAsText() // Использование
+    console.log('Содержимое файла:', content)
+  } // <-- Автоматическое освобождение при выходе
+
+  processFile('readme.txt')
+```
+
+Посмотреть как происходит создание и освобождение ресурса c эффектом замедления можно с помощью демки.
+
 <iframe title="Управление ресурсом с помощью using" src="demos/using-steps/" height="700"></iframe>
 
 ## Как пишется
 
+
+
 ## Как понять
 
-Рассмотрим работу с ресурсом на примере.
+
 Для имитации реального ресурса реализуем простой класс `FileResource`. Экземпляр класса имеет методы:
 - `open()` — открыть файл;
 - `read()` — читать данные файла;
