@@ -3,10 +3,23 @@ name: PR Checks
 on:
   pull_request:
 
+# Новый коммит в пулреквест отменяет прогон на предыдущем, чтобы галки
+# относились к актуальному коммиту, а не к устаревшему.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+# Проверки только читают: чекаут и список изменённых файлов пулреквеста.
+# Права на запись здесь опасны — код из форка выполняется под этим токеном.
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   editorconfig:
     name: Форматирование
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -16,6 +29,8 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         uses: Ana06/get-changed-files@v2.2.0
       - name: Работает линтер
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npm install editorconfig-checker --global
           config=.editorconfig
@@ -33,6 +48,7 @@ jobs:
   frontmatter-checker:
     name: Мета
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -43,37 +59,87 @@ jobs:
         uses: Ana06/get-changed-files@v2.2.0
         with:
           filter: |
-            (css|html|js|tools|a11y)/**/index.md
+            (css|html|js|tools|a11y|recipes)/**/index.md
             !(pages|people)/**/index.md
       - name: Работает линтер
+        env:
+          # Через `env`: имена файлов приходят из пулреквеста, а имя папки
+          # задаёт автор.
+          FILES: ${{ steps.files.outputs.added_modified }}
         run: |
-          files='${{ steps.files.outputs.added_modified }}'
-          if ! [[ $files == "" ]]; then
-            echo "Проверка для файлов из PR"
-            npx yaml-cat --format json --output result.json $(echo $files | grep -o -E '(css|html|js|tools|a11y)/[a-z-]+/index.md')
-            node .github/scripts/frontmatter.js
-          else
+          if [ -z "$FILES" ]; then
             echo "В PR нет файлов для проверки"
+            exit 0
           fi
-  link-checker:
-    name: Ссылки
-    needs:
-      - editorconfig
-      - frontmatter-checker
+          echo "Проверка для файлов из PR"
+          # Цифры в слаге тоже бывают: `html/h1-h6`, `tools/ipv6-for-webdevs`.
+          # Без них grep не находил такие файлы, и проверка шла вхолостую.
+          npx yaml-cat --format json --output result.json $(echo "$FILES" | grep -o -E '(css|html|js|tools|a11y|recipes)/[a-z0-9-]+/index.md')
+          node .github/scripts/frontmatter.js
+  # Обе проверки текста в одной джобе: чекаут и Node общие, а сами проверки
+  # занимают секунды. Шаги не прерывают друг друга — при падении видно оба
+  # отчёта сразу, а не только первый упавший.
+  # Тесты: node --test .github/scripts/check-spelling.test.mjs
+  #        node --test .github/scripts/check-yo.test.mjs
+  spelling:
+    name: Орфография
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
       - id: files
         if: ${{ github.event_name == 'pull_request' }}
         uses: Ana06/get-changed-files@v2.2.0
         with:
           filter: '*.md'
-          format: 'csv'
-      - name: Проверяет ссылки
-        if: ${{ steps.files.outputs.added_modified != '' }}
-        uses: JustinBeckwith/linkinator-action@v1
+      - name: Незнакомые слова
+        if: ${{ !cancelled() }}
+        run: |
+          files='${{ steps.files.outputs.added_modified }}'
+          if [[ $files == "" ]]; then
+            echo "В пулреквесте нет файлов для проверки"
+            exit 0
+          fi
+          node .github/scripts/check-spelling.mjs $files
+      - name: Буква ё
+        if: ${{ !cancelled() }}
+        run: |
+          files='${{ steps.files.outputs.added_modified }}'
+          if [[ $files == "" ]]; then
+            echo "В пулреквесте нет файлов для проверки"
+            exit 0
+          fi
+          node .github/scripts/check-yo.mjs $files
+
+  # Без `needs`: проверка идёт наравне с остальными, а не после них. Иначе
+  # опечатка в отступе прятала битые ссылки до следующего пуша — человек чинил
+  # по одной находке за круг.
+  link-checker:
+    name: Ссылки
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
         with:
-          paths: ${{ steps.files.outputs.added_modified }}
-          markdown: true
-          serverRoot: "/home/runner/work/content/content"
-          linksToSkip: "https?://(localhost|codepen.io)?(:[0-9]+)?/.*"
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - id: files
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: Ana06/get-changed-files@v2.2.0
+        with:
+          filter: '*.md'
+          format: 'space-delimited'
+      - name: Проверяет ссылки
+        if: ${{ steps.files.outputs.added_modified != '' || steps.files.outputs.removed != '' }}
+        run: |
+          npm install transliteration --no-save
+          node .github/scripts/link-check.js \
+            ${{ steps.files.outputs.added_modified }} \
+            ${{ steps.files.outputs.removed }}
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
